@@ -1,16 +1,9 @@
 {
-  "name": "express-generator",
-  "description": "Express' application generator",
+  "name": "kickstart-express-generator",
+  "description": "KickStart Custom Express' application generator",
   "version": "4.13.1",
-  "author": "TJ Holowaychuk <tj@vision-media.ca>",
-  "contributors": [
-    "Aaron Heckmann <aaron.heckmann+github@gmail.com>",
-    "Ciaran Jessup <ciaranj@gmail.com>",
-    "Douglas Christopher Wilson <doug@somethingdoug.com>",
-    "Guillermo Rauch <rauchg@gmail.com>",
-    "Jonathan Ong <me@jongleberry.com>",
-    "Roman Shtylman <shtylman+expressjs@gmail.com>"
-  ],
+  "author": "Kevin Isom<kevin.isom@gmail.com>",
+  "contributors": [ ],
   "keywords": [
     "express",
     "framework",
@@ -22,7 +15,7 @@
     "app",
     "api"
   ],
-  "repository": "expressjs/generator",
+  "repository": "kevnz/generator",
   "license": "MIT",
   "dependencies": {
     "commander": "2.7.1",
@@ -32,7 +25,7 @@
   "main": "bin/express",
   "preferGlobal": true,
   "bin": {
-    "express": "./bin/express"
+    "kickstart": "./bin/express"
   },
   "devDependencies": {
     "mocha": "2.2.5",
