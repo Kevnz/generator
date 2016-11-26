@@ -30,6 +30,7 @@ program
   .option('-e, --ejs', 'add ejs engine support (defaults to jade)')
   .option('    --hbs', 'add handlebars engine support')
   .option('-H, --hogan', 'add hogan.js engine support')
+  .option('-p, --port', 'Specify port')
   .option('-c, --css <engine>', 'add stylesheet <engine> support (less|stylus|compass|sass) (defaults to plain css)')
   .option('    --git', 'add .gitignore')
   .option('-f, --force', 'force on non-empty directory')
@@ -74,7 +75,7 @@ function confirm(msg, callback) {
  * @param {String} path
  */
 
-function createApplication(app_name, path) {
+function createApplication(app_name, path, app_port) {
   var wait = 8;
 
   console.log();
@@ -100,6 +101,7 @@ function createApplication(app_name, path) {
   // JavaScript
   var app = loadTemplate('js/app.js');
   var www = loadTemplate('js/www');
+  var dev = loadTemplate('js/dev');
   var index = loadTemplate('js/routes/index.js');
   var users = loadTemplate('js/routes/users.js');
   var db = loadTemplate('data/index.js');
@@ -113,8 +115,16 @@ function createApplication(app_name, path) {
   var compass = loadTemplate('css/style.scss');
   var sass = loadTemplate('css/style.sass');
 
+  //Settings
+  var eslint = loadTemplate('settings/eslintrc.txt');
+  var babel = loadTemplate('settings/babelrc.txt');
+  var editorconfig = loadTemplate('settings/editorconfig.txt');
+
+  console.log('path', path);
   mkdir(path, function(){
+    console.log('path', path);
     mkdir(path + '/public');
+    mkdir(path + '/src');
     mkdir(path + '/public/javascripts');
     mkdir(path + '/public/images');
 
@@ -139,19 +149,19 @@ function createApplication(app_name, path) {
       complete();
     });
 
-    mkdir(path + '/routes', function(){
-      write(path + '/routes/index.js', index);
-      write(path + '/routes/users.js', users);
+    mkdir(path + '/src/routes', function(){
+      write(path + '/src/routes/index.js', index);
+      write(path + '/src/routes/users.js', users);
       complete();
     });
 
-    mkdir(path + '/data', function(){
-      write(path + '/data/index.js', db);
+    mkdir(path + '/src/data', function(){
+      write(path + '/src/data/index.js', db);
       write(path + '/knexfile.js', knexfile);
       complete();
     });
-    mkdir(path + '/models', function(){
-      write(path + '/models/bookshelf.js', bookshelf);
+    mkdir(path + '/src/models', function(){
+      write(path + '/src/models/bookshelf.js', bookshelf);
       complete();
     });
     mkdir(path + '/config', function() {
@@ -161,6 +171,11 @@ function createApplication(app_name, path) {
         write(path + '/config/config.development.json', JSON.stringify(config, null, 2));
         write(path + '/config/config.staging.json', JSON.stringify(config, null, 2));
         write(path + '/config/config.production.json', JSON.stringify(config, null, 2));
+
+        write(path + '/.eslintrc', eslint);
+        write(path + '/.babelrc', babel);
+        write(path + '/.editorconfig', editorconfig);
+
         complete();
     });
     mkdir(path + '/views', function(){
@@ -214,7 +229,17 @@ function createApplication(app_name, path) {
         name: app_name
       , version: '1.0.0'
       , private: true
-      , scripts: { start: 'node ./bin/www' }
+      , scripts: {
+            start: 'node ./bin/www',
+            dev: 'node-dev ./bin/dev',
+            prestart: 'npm run build',
+            build: 'babel src --out-dir dist',
+            'migrate:make': 'knex migrate:make',
+            'migrate:run': 'knex migrate:latest',
+            'migrate:rollback': 'knex migrate:rollback',
+            'seed:make': 'knex seed:make',
+            'seed:run': 'knex seed:run'
+        }
       , dependencies: {
           'express': '~4.13.1',
           'body-parser': '~1.13.2',
@@ -228,7 +253,18 @@ function createApplication(app_name, path) {
           'xtconf': '~2.0.0'
       }
       , devDependencies: {
-
+          'node-dev': '~3.1.1',
+          'plop': '~1.5.0',
+          'babel-cli': "^6.11.4",
+          'babel-preset-es2015': '^6.6.0 ',
+          'babel-preset-es2016': '^6.11.3',
+          'babel-preset-react': '^6.5.0',
+          'babel-register': '^6.11.6',
+          'eslint': '^2.8.0',
+          'eslint-config-airbnb': '^8.0.0',
+          'eslint-plugin-import': '^1.5.0',
+          'eslint-plugin-jsx-a11y': '^1.0.2',
+          'eslint-plugin-react': '^5.0.1'
       }
     }
 
@@ -270,10 +306,12 @@ function createApplication(app_name, path) {
 
     // write files
     write(path + '/package.json', JSON.stringify(pkg, null, 2));
-    write(path + '/app.js', app);
+    write(path + '/src/app.js', app);
     mkdir(path + '/bin', function(){
       www = www.replace('{name}', app_name);
+      dev = dev.replace('{name}', app_name).replace('{port}', app_port || 3000);
       write(path + '/bin/www', www, 0755);
+      write(path + '/bin/dev', dev, 0755);
       complete();
     });
 
@@ -369,12 +407,12 @@ function main() {
   if (program.hbs) program.template = 'hbs';
   if (program.jade) {
     console.log('Jade? Really? Ugh!!!');
-     program.template = 'jade';
+    program.template = 'jade';
   }
   // Generate application
   emptyDirectory(destinationPath, function (empty) {
     if (empty || program.force) {
-      createApplication(appName, destinationPath);
+      createApplication(appName, destinationPath, program.port);
     } else {
       confirm('destination is not empty, continue? [y/N] ', function (ok) {
         if (ok) {
